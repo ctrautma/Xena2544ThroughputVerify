@@ -25,7 +25,7 @@ Instructions:
     yum-config-manager --add-repo http://download.mono-project.com/repo/centos/
     yum -y install mono-complete
 2. If python 3 not installed, install python 3. For RHEL instructions are below->
-    # install SCL for python33 by adding a repo to find its location to install it
+   Add this repo as python33.repo for your repo file locations. /etc/yum.repos.d
     [rhscl-python33-el7]
     name=Copr repo for python33-el7 owned by rhscl
     baseurl=https://copr-be.cloud.fedoraproject.org/results/rhscl/python33-el7/epel-7-$basearch/
@@ -46,7 +46,9 @@ Instructions:
 
 4. Make sure Xena2544.exe is present in the current folder
 
-5. Arguments to run this script
+5. Copy your x2544 config file to the script folder
+
+6. Arguments to run this script
     -f <path to config file> saved from Xena2544.exe GUI with your config.
     -s enable smart search, if verify fails will resume the search at the half
        way point between the last verify attempt and the minimum search value.
@@ -61,6 +63,17 @@ Instructions:
        exe file. If running on windows this is not necessary.
     -t <search trial duration in seconds> Modify original config to use the
        duration specified.
+
+7. Sample execution ->
+   Runs a 60 second trial with a 600 second verify using the myconfig.x2544
+   configuration file.
+   python XenaVerify.py -f myconfig.x2544 -s -l 600 -t 60
+
+Improvements to be done
+- Add debug logging
+- Add more customized options for modifying the running config
+- Add python 2.7 support
+
 
 """
 
