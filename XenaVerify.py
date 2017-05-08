@@ -139,7 +139,7 @@ class XenaJSON(object):
 
     def modify_reporting(self, pdf_enable=True, csv_enable=False,
                          xml_enable=True, html_enable=False,
-                         timestamp_enable=False):
+                         timestamp_enable=False, int_results=False):
         """
         Modify the reporting options
         :param pdf_enable: Enable pdf output, should disable for linux
@@ -147,6 +147,7 @@ class XenaJSON(object):
         :param xml_enable: Enable xml output
         :param html_enable: Enable html output
         :param timestamp_enable: Enable timestamp to report
+        :param int_results: Enable intermediate results
         :return: None
         """
         self.json_data['ReportConfig'][
@@ -159,6 +160,8 @@ class XenaJSON(object):
             'GenerateHtml'] = 'true' if html_enable else 'false'
         self.json_data['ReportConfig'][
             'AppendTimestamp'] = 'true' if timestamp_enable else 'false'
+        self.json_data['ReportConfig'][
+            'SaveIntermediateResults'] = 'true' if int_results else 'false'
 
     def write_config(self, path='./2bUsed.x2544'):
         """
@@ -181,7 +184,7 @@ def main(args):
     # unless user specifies it. Usually not supported on Linux. Also need to
     # disable the timestamp
     xena_current.modify_reporting(True if args.pdf_output else False,
-                                  True, True, False, False)
+                                  True, True, False, False, True)
     if args.search_trial_duration:
         xena_current.modify_duration(args.search_trial_duration)
     xena_current.write_config('./2bUsed.x2544')
@@ -312,7 +315,7 @@ def run_xena(config_file, windows_mode=False):
     root = ET.parse(r'./xena2544-report.xml').getroot()
     return (root[0][1][0].get('TestState'),
             float(root[0][1][0].get('TotalTxRatePcnt')),
-            int(root[0][1][0].get('TotalTxRateFps')),
+            float(root[0][1][0].get('TotalTxRateFps')),
             root[0][1][0].get('TotalLossFrames'))
 
 
