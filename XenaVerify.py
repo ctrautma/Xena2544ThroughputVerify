@@ -63,6 +63,7 @@ Instructions:
        exe file. If running on windows this is not necessary.
     -t <search trial duration in seconds> Modify original config to use the
        duration specified.
+    -z Enable Latency reporting
 
 7. Sample execution ->
    Runs a 60 second trial with a 600 second verify using the myconfig.x2544
@@ -91,6 +92,7 @@ _LOGGER = logging.getLogger(__name__)
 _LOCALE = locale.getlocale()[1]
 _XENA_USER = 'TestUser'
 _PYTHON_2 = sys.version_info[0] < 3
+
 
 class XenaJSON(object):
     """
@@ -137,6 +139,14 @@ class XenaJSON(object):
         self.json_data['TestOptions']['TestTypeOptionMap']['Throughput'][
             'Duration'] = duration
 
+    def modify_latency(self):
+        """
+        Enable Latency in json file
+        :return: None
+        """
+        self.json_data['TestOptions']['TestTypeOptionMap']['Throughput'][
+            'ReportPropertyOptions'] = ["LatencyCounters"]
+
     def modify_reporting(self, pdf_enable=True, csv_enable=False,
                          xml_enable=True, html_enable=False,
                          timestamp_enable=False, int_results=False):
@@ -172,6 +182,7 @@ class XenaJSON(object):
         if not write_json_file(self.json_data, path):
             raise RuntimeError("Could not write out file, please check config")
 
+
 def main(args):
     _LOGGER.setLevel(logging.DEBUG if args.debug else logging.INFO)
     stream_logger = logging.StreamHandler(sys.stdout)
@@ -187,6 +198,8 @@ def main(args):
                                   True, True, False, False, True)
     if args.search_trial_duration:
         xena_current.modify_duration(args.search_trial_duration)
+    if args.collect_latency:
+        xena_current.modify_latency()
     xena_current.write_config('./2bUsed.x2544')
 
     result = run_xena('./2bUsed.x2544', args.windows_mode)
@@ -215,6 +228,12 @@ def main(args):
                 verify_result[1]))
             _LOGGER.info('Pass result transmit fps = {}'.format(
                 verify_result[2]))
+            if args.collect_latency:
+                for x in verify_result[4]:
+                    _LOGGER.info('Port {}'.format(x.get('ID')))
+                    _LOGGER.info('Latency Min = {} micsec'.format(x.get('MinLatency')))
+                    _LOGGER.info('Latency Max = {} micsec'.format(x.get('MaxLatency')))
+                    _LOGGER.info('Latency Avg = {} micsec'.format(x.get('AvgLatency')))
             break
         else:
             _LOGGER.warn('Verify failed. Packets lost = {}'.format(
@@ -316,7 +335,9 @@ def run_xena(config_file, windows_mode=False):
     return (root[0][1][0].get('TestState'),
             float(root[0][1][0].get('TotalTxRatePcnt')),
             float(root[0][1][0].get('TotalTxRateFps')),
-            root[0][1][0].get('TotalLossFrames'))
+            root[0][1][0].get('TotalLossFrames'),
+            root[0][1][0], # return whole element
+            )
 
 
 def write_json_file(json_data, output_path):
@@ -370,6 +391,9 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--search_trial_duration', required=False,
                         help='Search trial duration in seconds', type=int,
                         default=0)
+    parser.add_argument('-z', '--collect_latency', required=False,
+                        help='Enable Latency counters', action='store_true',
+                        default=False)
     args = parser.parse_args()
     if args.debug:
         print("DEBUG ENABLED!!!")
@@ -377,4 +401,3 @@ if __name__ == '__main__':
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
-
