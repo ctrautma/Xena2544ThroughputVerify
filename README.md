@@ -7,41 +7,28 @@ Instructions:
 
     yum-config-manager --add-repo http://download.mono-project.com/repo/centos/
 
-    yum -y install mono-complete
+    yum -y install mono-complete-5.8.0.127-0.xamarin.3.epel7.x86_64
 
 2. If python 3 not installed, install python 3. For RHEL instructions are below->
 
-   Add this repo as python33.repo for your repo file locations. /etc/yum.repos.d
+   cat <<'EOT' >> /etc/yum.repos.d/python34.repo
+   [centos-sclo-rh]
+   name=CentOS-7 - SCLo rh
+   baseurl=http://mirror.centos.org/centos/7/sclo/$basearch/rh/
+   gpgcheck=0
+   enabled=1
+   gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-SIG-SCLo
+   EOT
 
-    [rhscl-python33-el7]
+    # install python34 scl package
 
-    name=Copr repo for python33-el7 owned by rhscl
+    yum -y install rh-python34 rh-python34-python-tkinter
 
-    baseurl=https://copr-be.cloud.fedoraproject.org/results/rhscl/python33-el7/epel-7-$basearch/
+    # cleanup python 34 repo file
 
-    type=rpm-md
+    rm -f /etc/yum.repos.d/python34.repo
 
-    skip_if_unavailable=True
-
-    gpgcheck=1
-
-    gpgkey=https://copr-be.cloud.fedoraproject.org/results/rhscl/python33-el7/pubkey.gpg
-
-    repo_gpgcheck=0
-
-    enabled=1
-
-    enabled_metadata=1
-
-    # install python33 package
-
-    yum -y install python33 python33-python-tkinter
-
-    # cleanup python 33 repo file
-
-    rm -f /etc/yum.repos.d/python33.repo
-
-3. Enable python33 -> scl enable python33 bash
+3. Enable python34 -> scl enable rh-python34 bash
 
 4. Make sure Xena2544.exe is present in the current folder
 
@@ -90,5 +77,3 @@ Improvements to be done
 - Add debug logging
 
 - Add more customized options for modifying the running config
-
-- Add python 2.7 support
