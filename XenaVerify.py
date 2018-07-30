@@ -25,6 +25,7 @@ import subprocess
 import sys
 from time import sleep
 import xml.etree.ElementTree as ET
+import base64
 
 _LOGGER = logging.getLogger(__name__)
 _LOCALE = locale.getlocale()[1]
@@ -55,9 +56,24 @@ class XenaJSON(object):
         self.duration = self.json_data['TestOptions']['TestTypeOptionMap'][
             'Throughput']['Duration']
 
+        self.packet_sizes = self.json_data['TestOptions']['PacketSizes'][
+            'CustomPacketSizes']
+        self.accept_loss = self.json_data['TestOptions']['TestTypeOptionMap'][
+            'Throughput']['RateIterationOptions']['AcceptableLoss']
+        self.active_ids = list(self.json_data['StreamProfileHandler'][
+            'ProfileAssignmentMap'].values())  # Assume 1 <= len(active_ids) <=2
+        self.entities = self.json_data['StreamProfileHandler']['EntityList']
+        self.active_entities = [x for x in self.entities if x['ItemID'] in self.active_ids] 
+
     # pylint: disable=too-many-arguments
-    def modify_2544_tput_options(self, initial_value, minimum_value,
-                                 maximum_value):
+    def modify_2544_tput_options(self, initial_value=None, value_resolution = None, 
+                                 minimum_value=None, maximum_value=None):
+        
+
+        self.init_tput = initial_value = self.init_tput if initial_value == None else initial_value
+        self.min_tput = minimum_value = self.min_tput if minimum_value == None else minimum_value
+        self.max_tput = maximum_value = self.max_tput if maximum_value == None else maximum_value
+        self.value_thresh = value_resolution = self.value_thresh if value_resolution == None else value_resolution
         """
         modify_2544_tput_options
         """
@@ -67,6 +83,7 @@ class XenaJSON(object):
             'RateIterationOptions']['MinimumValue'] = minimum_value
         self.json_data['TestOptions']['TestTypeOptionMap']['Throughput'][
             'RateIterationOptions']['MaximumValue'] = maximum_value
+        
 
     def modify_duration(self, duration):
         """
@@ -84,6 +101,95 @@ class XenaJSON(object):
         """
         self.json_data['TestOptions']['TestTypeOptionMap']['Throughput'][
             'ReportPropertyOptions'] = ["LatencyCounters"]
+
+    def modify_packet_size(self, packet_sizes):
+        """
+        Modify custom packet sizes
+        :return: None
+        """
+        self.json_data['TestOptions']['PacketSizes']['CustomPacketSizes'] = packet_sizes
+
+    def modify_acceptable_loss(self, acceptable_loss):
+        """
+        Modify acceptable loss
+        :return: None
+        """
+        self.json_data['TestOptions']['TestTypeOptionMap'][
+            'Throughput']['RateIterationOptions']['AcceptableLoss'] = acceptable_loss
+
+    def modify_mac_address(self, new_mac_addresses):
+        """
+        Modify source and destination mac addresses
+        :param mac_addresses: list of either one or two mac addresses
+        :return: None
+        """
+        
+        list_new_macs = [x.split(":") for x in new_mac_addresses]
+        curr_macs = [list(base64.b64decode(x["StreamConfig"]["HeaderSegments"][
+                                           0]["SegmentValue"])) 
+                    for x in self.active_entities]
+        for i in range(0, 6):
+            curr_macs[0][6 + i] = int(list_new_macs[0][i], 16)
+            if len(curr_macs) == 2:
+                curr_macs[1][i] = int(list_new_macs[0][i], 16)
+        
+        if len(list_new_macs) == 2:
+            for i in range(0, 6):
+                curr_ips[0][i] = int(list_new_macs[1][i], 16)
+                if len(curr_macs) == 2:
+                    curr_macs[1][6 + i] = int(list_new_macs[1][i], 16)
+                    
+        for x in curr_macs:
+            pp.pprint(base64.b64encode(bytes(x)).decode('ascii')) 
+        index_entities = 0
+        index_macs = 0
+        
+        for entity in self.entities:
+            if entity["ItemID"] in self.active_ids:
+                self.json_data["StreamProfileHandler"]["EntityList"][
+                    index_entities]["StreamConfig"]["HeaderSegments"][
+                    0]["SegmentValue"] = base64.b64encode(bytes(curr_macs[index_macs])).decode('ascii')
+                index_macs += 1
+            
+            index_entities += 1
+
+    def modify_ip_address(self, new_ips):
+        """
+        Modify source and destination ip addresses
+        :param ips: list of either one or two ip adresses
+        :return: None
+        """
+        
+        list_new_ips = [x.split(".") for x in new_ips]
+        curr_ips = [list(base64.b64decode(x["StreamConfig"]["HeaderSegments"][
+                                           1]["SegmentValue"])) 
+                    for x in self.active_entities]
+
+        for i in range(0, 4):
+            curr_ips[0][12 + i] = int(list_new_ips[0][i])
+            if len(curr_ips) == 2:
+                curr_ips[1][16 + i] = int(list_new_ips[0][i])
+        
+        if len(list_new_ips) == 2:
+            for i in range(0, 4):
+                curr_ips[0][16 + i] = int(list_new_ips[1][i])
+                if len(curr_ips) == 2:
+                    curr_ips[1][12 + i] = int(list_new_ips[1][i])
+                    
+        for x in curr_ips:
+            pp.pprint(base64.b64encode(bytes(x)).decode('ascii')) 
+        index_entities = 0
+        index_ips = 0
+        
+        for entity in self.entities:
+            if entity["ItemID"] in self.active_ids:
+                self.json_data["StreamProfileHandler"]["EntityList"][
+                    index_entities]["StreamConfig"]["HeaderSegments"][
+                    1]["SegmentValue"] = base64.b64encode(bytes(curr_ips[index_ips])).decode('ascii')
+                index_ips += 1
+            
+            index_entities += 1
+        
 
     def modify_reporting(self, pdf_enable=True, csv_enable=False,
                          xml_enable=True, html_enable=False,
@@ -138,9 +244,26 @@ def main(args):
         xena_current.modify_duration(args.search_trial_duration)
     if args.collect_latency:
         xena_current.modify_latency()
-    xena_current.write_config('./2bUsed.x2544')
+    if args.packet_sizes:
+        xena_current.modify_packet_size(args.packet_sizes)
+    if args.acceptable_loss:
+        xena_current.modify_acceptable_loss(args.acceptable_loss)
+    if args.initial_tput:
+        xena_current.modify_2544_tput_options(initial_value=args.initial_tput)
+    if args.max_tput:
+        xena_current.modify_2544_tput_options(maximum_value=args.max_tput)
+    if args.min_tput:
+        xena_current.modify_2544_tput_options(minimum_value=args.min_tput)
+    if args.resolution_tput:
+        xena_current.modify_2544_tput_options(value_resolution=args.resolution_tput)
+    if args.mac_address:
+        xena_current.modify_mac_address(args.mac_address)
+    if args.connection_ips:
+        xena_current.modify_ip_address(args.connection_ips)
 
-    result = run_xena('./2bUsed.x2544', args.windows_mode)
+    xena_current.write_config(args.save_file_name)
+
+    result = run_xena(args.save_file_name, args.windows_mode)
 
     # now run the verification step by creating a new config with the desired
     # params
@@ -332,6 +455,27 @@ if __name__ == '__main__':
     parser.add_argument('-z', '--collect_latency', required=False,
                         help='Enable Latency counters', action='store_true',
                         default=False)
+    parser.add_argument('-k', '--packet_sizes', required=False, nargs='+',
+                        type=int, default=False,
+                        help='Specify custom packet sizes for test')
+    parser.add_argument('-a', '--acceptable_loss', required=False, type=float,
+                        help='Specify acceptable loss in terms of percent of packages lost')
+    parser.add_argument('-v', '--save_file_name', required=False, type=str,
+                        default='./2bUsed.x2544', 
+                        help='File name to save new config file as')
+    parser.add_argument('-i', '--initial_tput', required=False, type=float,
+                        help='Specify initial throughput for test')
+    parser.add_argument('-M', '--max_tput', required=False, type=float,
+                        help='Specify maximum throughput for test')
+    parser.add_argument('-m', '--min_tput', required=False, type=float,
+                        help='Specify minimum throughput for test')
+    parser.add_argument('-n', '--mac_address', required=False, nargs='+',
+                        type=str, help='Set src and destination mac address')
+    parser.add_argument('-c', '--connection_ips', required=False, nargs='+',
+                        type=str, help='Set src and destination ip address')
+    parser.add_argument('-o', '--resolution_tput', required=False, type=float,
+                        help='Specify resolution rate for throughput test')
+
     args = parser.parse_args()
     if args.debug:
         print("DEBUG ENABLED!!!")
