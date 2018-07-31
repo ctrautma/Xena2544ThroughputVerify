@@ -60,10 +60,10 @@ Instructions:
     * `[-s]` : enable smart search, if verify fails will resume the search at the half way point between the last verify attempt and the minimum search value. Otherwise it will just resume at the last verify attempt value minus the value threshhold.
 
     * `[-l <verify_length_in_seconds>]` :
-    > Default : 7200 (2 hours)
+        > Default : 7200 (2 hours)
 
     * `[-r <retry_attempts>]` : Maximum number of verify attempts for giving up
-    > Default : 10
+        > Default : 10
 
     * `[-d]` : Enable debug mode
 
@@ -72,14 +72,14 @@ Instructions:
     * `[-w]` : Enable windows mode. By default it will use the mono package to run the exe file. If running on windows this is not necessary.
 
     * `[-t <search_trial_duration_in_seconds>]` : Modify original config to use the duration specified.
-    > Default : 0
+        > Default : 0
 
     * `[-k <packet_size>+]` : Customize packet sizes for throughput testing
 
     * `[-a <acceptable_loss>]` : Specify number of packages which can be lost as a percentage ([0 - 100])
 
     * `[-v <save_file_name>]` : Save config file which was created with the new arguments passed to this command.
-    > Default : `./2bUsed.x2544`
+        > Default : `./2bUsed.x2544`
 
     * `[-i <initial_tput>]` : Specify initial rate for throughput test
 
