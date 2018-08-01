@@ -27,10 +27,47 @@ from time import sleep
 import xml.etree.ElementTree as ET
 import base64
 
+import pprint
+
+pp = pprint.PrettyPrinter(indent=4)
+
 _LOGGER = logging.getLogger(__name__)
 _LOCALE = locale.getlocale()[1]
 _XENA_USER = 'TestUser'
 _PYTHON_2 = sys.version_info[0] < 3
+
+_FLOWS = {
+    '1': {
+        'flows': 1,
+        'lower': 0,
+        'upper': 0
+    },
+    '1k': {
+        'flows': 1000,
+        'lower': 999,
+        'upper': 0,
+    },
+    '4k': {
+        'flows': 4000,
+        'lower': 3999,
+        'upper': 0
+    },
+    '10k': {
+        'flows': 10000,
+        'lower': 999,
+        'upper': 9
+    },
+    '100k': {
+        'flows': 100000,
+        'lower': 999,
+        'upper': 99
+    },
+    '1M': {
+        'flows': 1000000,
+        'lower': 999,
+        'upper': 999
+    }
+}
 
 class XenaJSON(object):
     """
@@ -99,7 +136,7 @@ class XenaJSON(object):
         :return: None
         """
         self.json_data['TestOptions']['TestTypeOptionMap']['Throughput'][
-            'ReportPropertyOptions'] = ["LatencyCounters"]
+            'ReportPropertyOptions'] = ['LatencyCounters']
 
     def modify_packet_size(self, packet_sizes):
         """
@@ -123,9 +160,9 @@ class XenaJSON(object):
         :return: None
         """
         
-        list_new_macs = [x.split(":") for x in new_mac_addresses]
-        curr_macs = [list(base64.b64decode(x["StreamConfig"]["HeaderSegments"][
-                                           0]["SegmentValue"])) 
+        list_new_macs = [x.split(':') for x in new_mac_addresses]
+        curr_macs = [list(base64.b64decode(x['StreamConfig']['HeaderSegments'][
+                                           0]['SegmentValue'])) 
                     for x in self.active_entities]
         for i in range(0, 6):
             curr_macs[0][6 + i] = int(list_new_macs[0][i], 16)
@@ -142,10 +179,10 @@ class XenaJSON(object):
         index_macs = 0
         
         for entity in self.entities:
-            if entity["ItemID"] in self.active_ids:
-                self.json_data["StreamProfileHandler"]["EntityList"][
-                    index_entities]["StreamConfig"]["HeaderSegments"][
-                    0]["SegmentValue"] = base64.b64encode(bytes(curr_macs[index_macs])).decode('ascii')
+            if entity['ItemID'] in self.active_ids:
+                self.json_data['StreamProfileHandler']['EntityList'][
+                    index_entities]['StreamConfig']['HeaderSegments'][
+                    0]['SegmentValue'] = base64.b64encode(bytes(curr_macs[index_macs])).decode('ascii')
                 index_macs += 1
             
             index_entities += 1
@@ -157,9 +194,9 @@ class XenaJSON(object):
         :return: None
         """
         
-        list_new_ips = [x.split(".") for x in new_ips]
-        curr_ips = [list(base64.b64decode(x["StreamConfig"]["HeaderSegments"][
-                                           1]["SegmentValue"])) 
+        list_new_ips = [x.split('.') for x in new_ips]
+        curr_ips = [list(base64.b64decode(x['StreamConfig']['HeaderSegments'][
+                                           1]['SegmentValue'])) 
                     for x in self.active_entities]
 
         for i in range(0, 4):
@@ -177,10 +214,10 @@ class XenaJSON(object):
         index_ips = 0
         
         for entity in self.entities:
-            if entity["ItemID"] in self.active_ids:
-                self.json_data["StreamProfileHandler"]["EntityList"][
-                    index_entities]["StreamConfig"]["HeaderSegments"][
-                    1]["SegmentValue"] = base64.b64encode(bytes(curr_ips[index_ips])).decode('ascii')
+            if entity['ItemID'] in self.active_ids:
+                self.json_data['StreamProfileHandler']['EntityList'][
+                    index_entities]['StreamConfig']['HeaderSegments'][
+                    1]['SegmentValue'] = base64.b64encode(bytes(curr_ips[index_ips])).decode('ascii')
                 index_ips += 1
             
             index_entities += 1
@@ -192,19 +229,61 @@ class XenaJSON(object):
             self.modify_mac_flow(flow_count)
 
     def modify_ip_flow(self, flow_count):
-        upper = {
-            "Action": "INC",
-            "Offset": 1,
-            "StartValue": 0,
-            "StepValue": 1
-        }
-        lower = {
-            "Action": "INC",
-            "Offset": 2,
-            "StartValue": 0,
-            "StepValue": 1,
-            "RepeatCount": 1
-        }
+        flow = _FLOWS[flow_count]
+
+        field_names = ['Src IP Addr', 'Dest IP Addr']
+
+        upper_lower = [ {
+            'Action': 'INC',
+            'Offset': 1,
+            'StartValue': 0,
+            'StepValue': 1,
+            'StopValue': flow['upper'],
+            'RepeatCount': flow['lower'] + 1,
+            'Mask': '//A='
+        }, {
+            'Action': 'INC',
+            'Offset': 2,
+            'StartValue': 0,
+            'StopValue': flow['lower'],
+            'StepValue': 1,
+            'RepeatCount': 1,
+            'Mask': 'D/8='
+        } ]
+
+        entity_index = 0
+
+        for entity in self.entities:
+            if entity['ItemID'] in self.active_ids:
+
+                self.json_data['StreamProfileHandler']['EntityList'][                                   
+                    entity_index]['StreamConfig']['HwModifiers'] = []
+
+                ip_id = entity['StreamConfig']['HeaderSegments'][
+                        1]['ItemID']
+
+                to_append = []
+
+                for i in upper_lower:
+                    for j in field_names:
+                        to_append.append({
+                            'Mask': i['Mask'],
+                            'Action': i['Action'],
+                            'Offset': i['Offset'],
+                            'StartValue': i['StartValue'],
+                            'StepValue': i['StepValue'],
+                            'StopValue': i['StopValue'],
+                            'RepeatCount': i['RepeatCount'],
+                            'SegmentId': ip_id,
+                            'FieldName': j
+                        })
+                self.json_data['StreamProfileHandler']['EntityList'][
+                    entity_index]['StreamConfig']['HwModifiers'] += to_append
+               
+            entity_index += 1
+        
+        pp.pprint(self.json_data['StreamProfileHandler']['EntityList'])
+
         
     def modify_mac_flow(self, flow_count):
         pass
@@ -280,7 +359,7 @@ def main(args):
     if args.connection_ips:
         xena_current.modify_ip_address(args.connection_ips)
     if args.flow_count:
-        xena_current.modify_flow(args.flow_count, not args.use_mac_flows or args.use_both_flows, 
+        xena_current.modify_flows(args.flow_count, not args.use_mac_flows or args.use_both_flows, 
                                  args.use_mac_flows or args.use_both_flows) 
 
     xena_current.write_config(args.save_file_name)
@@ -500,7 +579,8 @@ if __name__ == '__main__':
 
 
     # TODO: Implement these
-    parser.add_argument('-u', '--flow_count', required=False, type=int)
+    parser.add_argument('-u', '--flow_count', required=False, choices=list(_FLOWS.keys()),
+                        help='Choose number of flows to run')
     parser.add_argument('-b', '--use_both_flows', required=False, 
                         default=False, action='store_true',
                         help='Use value passed to --flow_count for both MAC and IP')
