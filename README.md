@@ -1,86 +1,108 @@
 # Xena2544ThroughputVerify
 Instructions:
 
-1.  For linux Install Mono ->
+1. For linux Install Mono ->
 
+    ```bash
     rpm --import "http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF"
+    ```
 
+    ```bash
     yum-config-manager --add-repo http://download.mono-project.com/repo/centos/
+    ```
 
+    ```bash
     yum -y install mono-complete-5.8.0.127-0.xamarin.3.epel7.x86_64
+    ```
 
-2. If python 3 not installed, install python 3. For RHEL instructions are below->
+1. If python 3 not installed, install python 3. For RHEL instructions are below->
 
-     cat <<'EOT' >> /etc/yum.repos.d/python34.repo
+    ```
+    cat <<'EOT' >> /etc/yum.repos.d/python34.repo
 
-     [centos-sclo-rh]
+    [centos-sclo-rh]
 
-     name=CentOS-7 - SCLo rh
+    name=CentOS-7 - SCLo rh
 
-     baseurl=http://mirror.centos.org/centos/7/sclo/$basearch/rh/
+    baseurl=http://mirror.centos.org/centos/7/sclo/$basearch/rh/
 
-     gpgcheck=0
+    gpgcheck=0
 
-     enabled=1
+    enabled=1
 
-     gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-SIG-SCLo
+    gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-SIG-SCLo
 
-     EOT
+    EOT
+    ```
 
     # install python34 scl package
 
+    ```bash
     yum -y install rh-python34 rh-python34-python-tkinter
+    ```
 
     # cleanup python 34 repo file
 
+    ```bash
     rm -f /etc/yum.repos.d/python34.repo
+    ```
 
-3. Enable python34 -> scl enable rh-python34 bash
+1. Enable python34 -> `scl enable rh-python34 bash`
 
-4. Make sure Xena2544.exe is present in the current folder
+1. Make sure Xena2544.exe is present in the current folder
 
-5. Copy your x2544 config file to the script folder
+1. Copy your x2544 config file to the script folder
 
-6. Arguments to run this script
+1. Arguments to run this script
 
-    -f <path to config file> saved from Xena2544.exe GUI with your config.
+    * `-f <path_to_config_file>` : saved from Xena2544.exe GUI with your config.
 
-    -s enable smart search, if verify fails will resume the search at the half
+    * `[-s]` : enable smart search, if verify fails will resume the search at the half way point between the last verify attempt and the minimum search value. Otherwise it will just resume at the last verify attempt value minus the value threshhold.
 
-     way point between the last verify attempt and the minimum search value.
+    * `[-l <verify_length_in_seconds>]` :
+        > Default : 7200 (2 hours)
 
-     Otherwise it will just resume at the last verify attempt value minus
+    * `[-r <retry_attempts>]` : Maximum number of verify attempts for giving up
+        > Default : 10
 
-     the value threshhold.
+    * `[-d]` : Enable debug mode
 
-    -l <verify length in seconds> Default of 2 hours.
+    * `[-p]` : Output PDF file. By default output of PDF report is disabled. Will cause a crash on linux usually as a pdf renderer is not installed.
 
-    -r <retry attempts> Maximum number of verify attempts for giving up
+    * `[-w]` : Enable windows mode. By default it will use the mono package to run the exe file. If running on windows this is not necessary.
 
-    -d Enable debug mode
+    * `[-t <search_trial_duration_in_seconds>]` : Modify original config to use the duration specified.
+        > Default : 0
 
-    -p Output PDF file. By default output of PDF report is disabled. Will cause
+    * `[-k <packet_size>+]` : Customize packet sizes for throughput testing
 
-    a crash on linux usually as a pdf renderer is not installed.
+    * `[-a <acceptable_loss>]` : Specify number of packages which can be lost as a percentage ([0 - 100])
 
-    -w Enable windows mode. By default it will use the mono package to run the
+    * `[-v <save_file_name>]` : Save config file which was created with the new arguments passed to this command.
+        > Default : `./2bUsed.x2544`
 
-    exe file. If running on windows this is not necessary.
+    * `[-i <initial_tput>]` : Specify initial rate for throughput test
 
-    -t <search trial duration in seconds> Modify original config to use the
+    * `[-M <max_tput>]` : Specify maximum rate for throughput test
 
-    duration specified.
+    * `[-m <min_tput>]` : Specify minimum rate for throughput test
 
-7. Sample execution ->
+    * `[-o <resolution_tput>]` : Specify resolution for throughput testing
 
-   Runs a 60 second trial with a 600 second verify using the myconfig.x2544
+    * `[-n <mac_address> [<mac_address>]]` : First MAC address becomes source of first active entity and destination for second (if two exist). Vice versa for the optional second argument.
 
-   configuration file.
+    * `[-c <connection_ip> [<connection_ip>]]` : First IP address becomes source of first active entity and destination for second (if two exist). Vice versa for the optional second argument.
 
+1. Sample execution:
+
+   > Runs a 60 second trial with a 600 second verify using the myconfig.x2544 configuration file.
+
+   ```bash
    python XenaVerify.py -f myconfig.x2544 -s -l 600 -t 60
+   ```
 
-Improvements to be done
+#### Improvements to be done
 
-- Add debug logging
+* Add debug logging
 
-- Add more customized options for modifying the running config
+* Add more customized options for modifying the running config
