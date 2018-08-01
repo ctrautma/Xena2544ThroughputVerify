@@ -32,7 +32,6 @@ _LOCALE = locale.getlocale()[1]
 _XENA_USER = 'TestUser'
 _PYTHON_2 = sys.version_info[0] < 3
 
-
 class XenaJSON(object):
     """
     Class to modify and read Xena JSON configuration files.
@@ -139,8 +138,6 @@ class XenaJSON(object):
                 if len(curr_macs) == 2:
                     curr_macs[1][6 + i] = int(list_new_macs[1][i], 16)
                     
-        for x in curr_macs:
-            pp.pprint(base64.b64encode(bytes(x)).decode('ascii')) 
         index_entities = 0
         index_macs = 0
         
@@ -176,8 +173,6 @@ class XenaJSON(object):
                 if len(curr_ips) == 2:
                     curr_ips[1][12 + i] = int(list_new_ips[1][i])
                     
-        for x in curr_ips:
-            pp.pprint(base64.b64encode(bytes(x)).decode('ascii')) 
         index_entities = 0
         index_ips = 0
         
@@ -189,6 +184,30 @@ class XenaJSON(object):
                 index_ips += 1
             
             index_entities += 1
+
+    def modify_flows(self, flow_count, use_ip, use_mac):
+        if use_ip:
+            self.modify_ip_flow(flow_count)
+        if use_mac:
+            self.modify_mac_flow(flow_count)
+
+    def modify_ip_flow(self, flow_count):
+        upper = {
+            "Action": "INC",
+            "Offset": 1,
+            "StartValue": 0,
+            "StepValue": 1
+        }
+        lower = {
+            "Action": "INC",
+            "Offset": 2,
+            "StartValue": 0,
+            "StepValue": 1,
+            "RepeatCount": 1
+        }
+        
+    def modify_mac_flow(self, flow_count):
+        pass
         
 
     def modify_reporting(self, pdf_enable=True, csv_enable=False,
@@ -260,6 +279,9 @@ def main(args):
         xena_current.modify_mac_address(args.mac_address)
     if args.connection_ips:
         xena_current.modify_ip_address(args.connection_ips)
+    if args.flow_count:
+        xena_current.modify_flow(args.flow_count, not args.use_mac_flows or args.use_both_flows, 
+                                 args.use_mac_flows or args.use_both_flows) 
 
     xena_current.write_config(args.save_file_name)
 
@@ -475,6 +497,16 @@ if __name__ == '__main__':
                         type=str, help='Set src and destination ip address')
     parser.add_argument('-o', '--resolution_tput', required=False, type=float,
                         help='Specify resolution rate for throughput test')
+
+
+    # TODO: Implement these
+    parser.add_argument('-u', '--flow_count', required=False, type=int)
+    parser.add_argument('-b', '--use_both_flows', required=False, 
+                        default=False, action='store_true',
+                        help='Use value passed to --flow_count for both MAC and IP')
+    parser.add_argument('-e', '--use_mac_flows', required=False, 
+                        default=False, action='store_true', 
+                        help='Use value passed to --flow_count for MAC')
 
     args = parser.parse_args()
     if args.debug:
