@@ -93,6 +93,10 @@ Instructions:
 
     * `[-c <connection_ip> [<connection_ip>]]` : First IP address becomes source of first active entity and destination for second (if two exist). Vice versa for the optional second argument.
 
+    * `[-u {1|1k|4k|10k|100k|1M}]` : Specify hardware modifier flows. Default behavior is to apply this to source and destination IP addresses
+        * `[-b]` : Apply flows to both MAC and IP addresses (overrides `[-e]`)
+        * `[-e]` : Apply flows to MAC addresses only
+
 1. Sample execution:
 
    > Runs a 60 second trial with a 600 second verify using the myconfig.x2544 configuration file.
