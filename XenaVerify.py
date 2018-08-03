@@ -39,33 +39,45 @@ _PYTHON_2 = sys.version_info[0] < 3
 _FLOWS = {
     '1': {
         'flows': 1,
-        'lower': 0,
-        'upper': 0
+        'stops': [0],
+        'masks': ['//8='],
+        'repeats': [1],
+        'offsets': [2],
     },
     '1k': {
         'flows': 1000,
-        'lower': 999,
-        'upper': 0,
+        'stops': [999],
+        'masks': ['//8='],
+        'repeats': [1],
+        'offsets': [2]
     },
     '4k': {
         'flows': 4000,
-        'lower': 3999,
-        'upper': 0
+        'stops': [3999],
+        'masks': ['//8='],
+        'repeats': [1],
+        'offsets': [2]
     },
     '10k': {
         'flows': 10000,
-        'lower': 999,
-        'upper': 9
+        'stops': [9999],
+        'masks': ['//8='],
+        'repeats': [1],
+        'offsets': [2]
     },
     '100k': {
         'flows': 100000,
-        'lower': 999,
-        'upper': 99
+        'stops': [999, 99],
+        'masks': ['D/8=', '//A='],
+        'repeats': [1, 1000],
+        'offsets': [2, 1]
     },
     '1M': {
         'flows': 1000000,
-        'lower': 999,
-        'upper': 999
+        'stops': [999, 999],
+        'masks': ['D/8=', '//A='],
+        'repeats': [1, 1000],
+        'offsets': [2, 1]
     }
 }
 
@@ -223,6 +235,12 @@ class XenaJSON(object):
             index_entities += 1
 
     def modify_flows(self, flow_count, use_ip, use_mac):
+
+
+        for i in range(len(self.json_data['StreamProfileHandler']['EntityList'])):
+            self.json_data['StreamProfileHandler']['EntityList'][i][
+                'StreamConfig']['HwModifiers'] = []
+        
         if use_ip:
             self.modify_ip_flow(flow_count)
         if use_mac:
@@ -233,47 +251,32 @@ class XenaJSON(object):
 
         field_names = ['Src IP Addr', 'Dest IP Addr']
 
-        upper_lower = [ {
+        common = {
             'Action': 'INC',
-            'Offset': 1,
             'StartValue': 0,
-            'StepValue': 1,
-            'StopValue': flow['upper'],
-            'RepeatCount': flow['lower'] + 1,
-            'Mask': '//A='
-        }, {
-            'Action': 'INC',
-            'Offset': 2,
-            'StartValue': 0,
-            'StopValue': flow['lower'],
-            'StepValue': 1,
-            'RepeatCount': 1,
-            'Mask': 'D/8='
-        } ]
+            'StepValue': 1
+        }
 
         entity_index = 0
 
         for entity in self.entities:
             if entity['ItemID'] in self.active_ids:
 
-                self.json_data['StreamProfileHandler']['EntityList'][                                   
-                    entity_index]['StreamConfig']['HwModifiers'] = []
-
                 ip_id = entity['StreamConfig']['HeaderSegments'][
                         1]['ItemID']
 
                 to_append = []
 
-                for i in upper_lower:
+                for i in range(len(flow['stops'])):
                     for j in field_names:
                         to_append.append({
-                            'Mask': i['Mask'],
-                            'Action': i['Action'],
-                            'Offset': i['Offset'],
-                            'StartValue': i['StartValue'],
-                            'StepValue': i['StepValue'],
-                            'StopValue': i['StopValue'],
-                            'RepeatCount': i['RepeatCount'],
+                            'Mask': flow['masks'][i],
+                            'Action': common['Action'],
+                            'Offset': flow['offsets'][i],
+                            'StartValue': common['StartValue'],
+                            'StepValue': common['StepValue'],
+                            'StopValue': flow['stops'][i],
+                            'RepeatCount': flow['repeats'][i],
                             'SegmentId': ip_id,
                             'FieldName': j
                         })
@@ -281,12 +284,48 @@ class XenaJSON(object):
                     entity_index]['StreamConfig']['HwModifiers'] += to_append
                
             entity_index += 1
-        
-        pp.pprint(self.json_data['StreamProfileHandler']['EntityList'])
 
         
     def modify_mac_flow(self, flow_count):
-        pass
+        flow = _FLOWS[flow_count]
+
+        field_names = ['Src MAC addr', 'Dst MAC addr']
+
+        common = {
+            'Action': 'INC',
+            'StartValue': 0,
+            'StepValue': 1,
+            'Mask': '//8='
+        }
+
+        entity_index = 0
+
+        for entity in self.entities:
+            if entity['ItemID'] in self.active_ids:
+
+                mac_id = entity['StreamConfig']['HeaderSegments'][
+                        0]['ItemID']
+
+                to_append = []
+
+                for i in range(len(flow['stops'])):
+                    for j in field_names:
+                        to_append.append({
+                            'Mask': common['Mask'],
+                            'Action': common['Action'],
+                            'Offset': flow['offsets'][i]*2,
+                            'StartValue': common['StartValue'],
+                            'StepValue': common['StepValue'],
+                            'StopValue': flow['stops'][i],
+                            'RepeatCount': flow['repeats'][i],
+                            'SegmentId': mac_id,
+                            'FieldName': j
+                        })
+                self.json_data['StreamProfileHandler']['EntityList'][
+                    entity_index]['StreamConfig']['HwModifiers'] += to_append
+
+            entity_index += 1
+        
         
 
     def modify_reporting(self, pdf_enable=True, csv_enable=False,
@@ -576,14 +615,11 @@ if __name__ == '__main__':
                         type=str, help='Set src and destination ip address')
     parser.add_argument('-o', '--resolution_tput', required=False, type=float,
                         help='Specify resolution rate for throughput test')
-
-
-    # TODO: Implement these
     parser.add_argument('-u', '--flow_count', required=False, choices=list(_FLOWS.keys()),
                         help='Choose number of flows to run')
     parser.add_argument('-b', '--use_both_flows', required=False, 
                         default=False, action='store_true',
-                        help='Use value passed to --flow_count for both MAC and IP')
+                        help='Use value passed to --flow_count for both MAC and IP does not work for 100k and 1M')
     parser.add_argument('-e', '--use_mac_flows', required=False, 
                         default=False, action='store_true', 
                         help='Use value passed to --flow_count for MAC')
