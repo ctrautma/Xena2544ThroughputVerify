@@ -414,8 +414,8 @@ def main(args):
         _LOGGER.info('Verify attempt {}'.format(_))
         old_min = xena_current.min_tput # need this if verify fails
         old_duration = xena_current.duration
-        xena_current.modify_2544_tput_options(result[1], result[1],
-                                              result[1])
+        xena_current.modify_2544_tput_options(initial_value=result[1], minimum_value=result[1],
+                                              maximum_value=result[1])
         xena_current.modify_duration(args.verify_duration)
         xena_current.write_config('./verify.x2544')
         # run verify step
@@ -445,7 +445,8 @@ def main(args):
             else:
                 new_init = result[1] - xena_current.value_thresh
             xena_current.modify_2544_tput_options(
-                new_init, old_min, result[1] - xena_current.value_thresh)
+                initial_value=new_init, minimum_value=old_min, 
+                maximum_value=result[1] - xena_current.value_thresh)
             xena_current.modify_duration(
                 args.search_trial_duration if args.search_trial_duration else
                 old_duration)
