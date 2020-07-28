@@ -1213,48 +1213,54 @@ def main(args):
     # create the manager session
     xm = XenaManager(xena_socket, 'TestUser')
     time.sleep(1)
-
-    # add port 0 and configure
-    port0 = xm.add_module_port(args.module, args.ports[0])
-    port0.reserve_port()
-    port0.clear_stats()
-    # add port 1 and configure
-    port1 = xm.add_module_port(args.module, args.ports[1])
-    port1.reserve_port()
-    port1.clear_stats()
-
-    # add a single stream and configure
-    s1_p0 = port0.add_stream()
-    s1_p0.set_packet_limit(args.duration * args.pps)
-    s1_p0.set_on()
-    s1_p0.set_packet_per_second(args.pps)
-    s1_p0.set_packet_header(pkthdr1)
-    s1_p0.set_packet_length('fixed', args.pkt_size, 1518)
-    s1_p0.set_packet_payload('incrementing', '0x00')
-    s1_p0.set_header_protocol('ETHERNET IP')
-    s1_p0.set_payload_id(1)
-    if args.number_streams:
-        s1_p0.enable_multistream(args.number_streams, 'L3')
-    port0.traffic_on()
-    time.sleep(args.duration + 2)
-    port0.traffic_off()
-    stat = port1.get_rx_stats()
-    print(stat.data)
-    pkt_sent = args.duration * args.pps
-    print('Packets sent: {}'.format(pkt_sent))
-    pkt_rec = stat.data['pr_total']['packets']
-    pkt_latency_avg = stat.data['pr_tpldlatency']['1']['avg']
-    print('Packet latency: {} ns'.format(pkt_latency_avg))
-    pkt_lost = pkt_sent - pkt_rec
-    print('Packets received: {}'.format(pkt_rec))
-    print('Packets lost: {}'.format(pkt_lost))
-    
-    # disconnect from Xena
-    print('Disconnecting from Xena chassis...')
-    xm.disconnect()
-    del xm
-    del xena_socket
-    print('Connection severed')
+    try:
+        # add port 0 and configure
+        port0 = xm.add_module_port(args.module, args.ports[0])
+        port0.reserve_port()
+        port0.clear_stats()
+        # add port 1 and configure
+        port1 = xm.add_module_port(args.module, args.ports[1])
+        port1.reserve_port()
+        port1.clear_stats()
+    except Exception as e:
+        print('An exception occurred while attempting to add and configure ports')
+        print(e)
+    try:
+        # add a single stream and configure
+        s1_p0 = port0.add_stream()
+        s1_p0.set_packet_limit(args.duration * args.pps)
+        s1_p0.set_on()
+        s1_p0.set_packet_per_second(args.pps)
+        s1_p0.set_packet_header(pkthdr1)
+        s1_p0.set_packet_length('fixed', args.pkt_size, 1518)
+        s1_p0.set_packet_payload('incrementing', '0x00')
+        s1_p0.set_header_protocol('ETHERNET IP')
+        s1_p0.set_payload_id(1)
+        if args.number_streams:
+            s1_p0.enable_multistream(args.number_streams, 'L3')
+        port0.traffic_on()
+        time.sleep(args.duration + 2)
+        port0.traffic_off()
+        stat = port1.get_rx_stats()
+        print(stat.data)
+        pkt_sent = args.duration * args.pps
+        print('Packets sent: {}'.format(pkt_sent))
+        pkt_rec = stat.data['pr_total']['packets']
+        pkt_latency_avg = stat.data['pr_tpldlatency']['1']['avg']
+        print('Packet latency: {} ns'.format(pkt_latency_avg))
+        pkt_lost = pkt_sent - pkt_rec
+        print('Packets received: {}'.format(pkt_rec))
+        print('Packets lost: {}'.format(pkt_lost))
+    except Exception as e:
+        print('An exception occurred while attempting to add and configure stream')
+        print(e)
+    finally:
+        # disconnect from Xena
+        print('Disconnecting from Xena chassis...')
+        xm.disconnect()
+        del xm
+        del xena_socket
+        print('Connection severed')
 
 if __name__ == '__main__':
     import sys
