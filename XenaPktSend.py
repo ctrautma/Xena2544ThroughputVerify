@@ -1211,7 +1211,7 @@ def main(args):
     time.sleep(1)
 
     # create the manager session
-    xm = XenaManager(xena_socket, 'Ralongi')
+    xm = XenaManager(xena_socket, 'TestUser')
     time.sleep(1)
 
     # add port 0 and configure
