@@ -409,7 +409,7 @@ def main(args):
     # params
     for _ in range(1, args.retry_attempts +1):
         if result[0] != 'PASS':
-            _LOGGER.error('Xena2544.exe Test failed. Please check test config.')
+            _LOGGER.error('Valkyrie2544.exe Test failed. Please check test config.')
             break
         _LOGGER.info('Verify attempt {}'.format(_))
         old_min = xena_current.min_tput # need this if verify fails
@@ -486,14 +486,14 @@ def read_json_file(json_file):
 
 def run_xena(config_file, windows_mode=False):
     """
-    Run Xena2544.exe with the config file specified.
+    Run Valkyrie2544.exe with the config file specified.
     :param config_file: config file to use
     :param windows_mode: enable windows mode which bypasses the usage of mono
     :return: Tuple of pass or fail result as str, and current transmit rate as
     float, transmit fps, and packets lost
     """
     user_home = os.path.expanduser('~')
-    log_path = '{}/Xena/Xena2544-2G/Logs/xena2544.log'.format(user_home)
+    log_path = '{}/Xena/Valkrie2544/Logs/valkyrie2544.log'.format(user_home)
     # make the folder and log file if they doesn't exist
     if not os.path.exists(log_path):
         os.makedirs(os.path.dirname(log_path))
@@ -503,10 +503,10 @@ def run_xena(config_file, windows_mode=False):
 
     # setup the xena command line
     args = ["mono" if not windows_mode else "",
-            "Xena2544.exe", "-c", config_file, "-e", "-r", "./", "-u",
+            "Valkyrie2544.exe", "-c", config_file, "-e", "-r", "./", "-u",
             _XENA_USER]
 
-    # Sometimes Xena2544.exe completes, but mono holds the process without
+    # Sometimes Valkyrie2544.exe completes, but mono holds the process without
     # releasing it, this can cause a deadlock of the main thread. Use the
     # xena log file as a way to detect this.
     log_handle = open(log_path, 'r')
@@ -533,7 +533,7 @@ def run_xena(config_file, windows_mode=False):
                     break
 
     # parse the result file and return the needed data
-    root = ET.parse(r'./xena2544-report.xml').getroot()
+    root = ET.parse(r'./valkyrie2544-report.xml').getroot()
     return (root[0][1][0].get('TestState'),
             float(root[0][1][0].get('TotalTxRatePcnt')),
             float(root[0][1][0].get('TotalTxRateFps')),
@@ -573,7 +573,7 @@ def write_json_file(json_data, output_path):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', '--config_file', type=str, required=True,
-                        help='Xena 2544 json config file name')
+                        help='Xena/Valkyrie 2544 json config file name')
     parser.add_argument('-d', '--debug', action='store_true', required=False,
                         help='Enable debug logging')
     parser.add_argument('-w', '--windows_mode', required=False,
