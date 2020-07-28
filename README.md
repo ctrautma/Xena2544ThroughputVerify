@@ -49,13 +49,13 @@ Instructions:
 
 1. Enable python34 -> `scl enable rh-python34 bash`
 
-1. Make sure Xena2544.exe is present in the current folder
+1. Make sure Valkyrie2544.exe is present in the current folder (formerly Xena2544.exe)
 
 1. Copy your x2544 config file to the script folder
 
 1. Arguments to run this script
 
-    * `-f <path_to_config_file>` : saved from Xena2544.exe GUI with your config.
+    * `-f <path_to_config_file>` : saved from Valkyrie2544.exe GUI with your config.
 
     * `[-s]` : enable smart search, if verify fails will resume the search at the half way point between the last verify attempt and the minimum search value. Otherwise it will just resume at the last verify attempt value minus the value threshhold.
 
