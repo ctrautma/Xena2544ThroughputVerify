@@ -1248,6 +1248,13 @@ def main(args):
     pkt_lost = pkt_sent - pkt_rec
     print('Packets received: {}'.format(pkt_rec))
     print('Packets lost: {}'.format(pkt_lost))
+    
+    # disconnect from Xena
+    print('Disconnecting from Xena chassis...')
+    xm.disconnect()
+    del xm
+    del xena_socket
+    print('Connection severed')
 
 if __name__ == '__main__':
     import sys
