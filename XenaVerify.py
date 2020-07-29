@@ -439,7 +439,7 @@ def main(args):
         else:
             _LOGGER.warn('Verify failed. Packets lost = {}'.format(
                 verify_result[3]))
-            _LOGGER.info('Restarting Xena2544.exe with new values')
+            _LOGGER.info('Restarting Valkyrie2544.exe with new values')
             if args.smart_search:
                 new_init = (verify_result[1] - old_min) / 2
             else:
@@ -524,7 +524,7 @@ def run_xena(config_file, windows_mode=False):
                 log_handle.close()
                 break
             except subprocess.TimeoutExpired:
-                # check the log to see if Xena2544 has completed and mono is
+                # check the log to see if Valkrie2544 has completed and mono is
                 # deadlocked.
                 data += log_handle.read()
                 if 'TestCompletedSuccessfully' in data:
