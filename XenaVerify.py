@@ -579,7 +579,7 @@ if __name__ == '__main__':
     parser.add_argument('-w', '--windows_mode', required=False,
                         action='store_true', help='Use windows mode, no mono')
     parser.add_argument('-l', '--verify_duration', required=False,
-                        type=int, default=7200,
+                        type=int, default=600,
                         help='Verification duration in seconds')
     parser.add_argument('-r', '--retry_attempts', type=int, default=5,
                         required=False, help='Maximum verify attempts')
