@@ -581,7 +581,7 @@ if __name__ == '__main__':
     parser.add_argument('-l', '--verify_duration', required=False,
                         type=int, default=7200,
                         help='Verification duration in seconds')
-    parser.add_argument('-r', '--retry_attempts', type=int, default=10,
+    parser.add_argument('-r', '--retry_attempts', type=int, default=5,
                         required=False, help='Maximum verify attempts')
     parser.add_argument('-s', '--smart_search', action='store_true',
                         required=False, help='Enable smart search',
