@@ -437,7 +437,7 @@ def main(args):
                     _LOGGER.info('Latency Avg = {} micsec'.format(x.get('AvgLatency')))
             break
         else:
-            _LOGGER.warn('Verify failed. Packets lost = {}'.format(
+            _LOGGER.warning('Verify failed. Packets lost = {}'.format(
                 verify_result[3]))
             _LOGGER.info('Restarting Valkyrie2544.exe with new values')
             if args.smart_search:
