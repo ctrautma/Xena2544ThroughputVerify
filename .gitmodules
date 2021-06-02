@@ -1,0 +1,3 @@
+[submodule "XenaPythonLib"]
+	path = XenaPythonLib
+	url = https://github.com/fleitner/XenaPythonLib
