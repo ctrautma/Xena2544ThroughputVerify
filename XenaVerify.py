@@ -17,17 +17,16 @@
 #
 
 import argparse
+import base64
 import json
 import locale
 import logging
 import os
+import pprint
 import subprocess
 import sys
-from time import sleep
 import xml.etree.ElementTree as ET
-import base64
-
-import pprint
+from time import sleep
 
 pp = pprint.PrettyPrinter(indent=4)
 
