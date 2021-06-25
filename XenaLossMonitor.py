@@ -62,10 +62,11 @@ def main(args):
     stream_logger.setFormatter(logging.Formatter(
         '[%(levelname)-5s]  %(asctime)s : (%(name)s) - %(message)s'))
     _LOGGER.addHandler(stream_logger)
-    xena_socket = XenaSocketDriver(args.chassis)
-    xena_manager = XenaManager(xena_socket, 'Monitor', 'xena')
-    port0 = xena_manager.add_module_port(args.module, args.ports[0])
-    port1 = xena_manager.add_module_port(args.module, args.ports[1])
+    xena_socket = XenaSocket(args.chassis)
+    xena_socket.connect()
+    xena_manager = XenaLossMonitorManager(xena_socket, 'Monitor')
+    port0 = xena_manager.add_port(args.module, args.ports[0])
+    port1 = xena_manager.add_port(args.module, args.ports[1])
     totaltime = 0
     while totaltime < args.length:
         time.sleep(1)
@@ -73,16 +74,18 @@ def main(args):
         total_lossport0 = 0
         total_lossport1 = 0
         if totaltime % args.interval == 0:
-            rx_stats0 = port0.get_rx_stats()
-            rx_stats1 = port1.get_rx_stats()
-            for stat in rx_stats0._stats:
-                match = re.match('\d+\/\d+\s+PR_TPLDERRORS\s+\[\d+\]\s+\d+\s+(\d+)\s+\d+\s+\d+\n', stat)
-                if match:
-                    total_lossport0 += int(match.group(1))
-            for stat in rx_stats1._stats:
-                match = re.match('\d+\/\d+\s+PR_TPLDERRORS\s+\[\d+\]\s+\d+\s+(\d+)\s+\d+\s+\d+\n', stat)
-                if match:
-                    total_lossport1 += int(match.group(1))
+            # retrieve rx stats from each port
+            port0.grab_all_rx_stats()
+            port1.grab_all_rx_stats()
+            
+            # p#_errors stores the errors since last poll - useful when debugging
+            p0_errors = port0.get_total_errors_counter()
+            p1_errors = port1.get_total_errors_counter()
+            
+            # update total loss statistics
+            total_lossport0 += p0_errors
+            total_lossport1 += p1_errors
+
             _LOGGER.info('Port 0 total lost frames: {}'.format(total_lossport0))
             _LOGGER.info('Port 1 total lost frames: {}'.format(total_lossport1))
 
