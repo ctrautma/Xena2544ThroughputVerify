@@ -44,6 +44,18 @@ through socket commands and returning different statistics.
 _LOCALE = locale.getlocale()[1]
 _LOGGER = logging.getLogger(__name__)
 
+class XenaLossMonitorManager(XenaManager):
+    def add_port(self, module, port):
+        if (module, port) in self.ports:
+            _LOGGER.error("Adding duplicated port")
+            return
+
+        port_new = XenaPort(self.xsocket, module, port)
+
+        port_new.reset()
+        self.ports[(module, port)] = port_new
+        return port_new
+
 def main(args):
     _LOGGER.setLevel(logging.DEBUG if args.debug else logging.INFO)
     stream_logger = logging.StreamHandler(sys.stdout)
