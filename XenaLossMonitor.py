@@ -20,11 +20,11 @@
 import argparse
 import locale
 import logging
-import re
-import socket
-import struct
+#import re
+#import socket
+#import struct
 import sys
-import threading
+#import threading
 import time
 
 from xenalib.XenaSocket import XenaSocket
@@ -78,13 +78,9 @@ def main(args):
             port0.grab_all_rx_stats()
             port1.grab_all_rx_stats()
             
-            # p#_errors stores the errors since last poll - useful when debugging
-            p0_errors = port0.get_total_errors_counter()
-            p1_errors = port1.get_total_errors_counter()
-            
             # update total loss statistics
-            total_lossport0 += p0_errors
-            total_lossport1 += p1_errors
+            total_lossport0 = port0.get_total_errors_counter()
+            total_lossport1 = port1.get_total_errors_counter()
 
             _LOGGER.info('Port 0 total lost frames: {}'.format(total_lossport0))
             _LOGGER.info('Port 1 total lost frames: {}'.format(total_lossport1))
