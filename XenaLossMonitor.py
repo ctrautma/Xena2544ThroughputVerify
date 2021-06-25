@@ -20,11 +20,7 @@
 import argparse
 import locale
 import logging
-#import re
-#import socket
-#import struct
 import sys
-#import threading
 import time
 
 from xenalib.XenaSocket import XenaSocket
