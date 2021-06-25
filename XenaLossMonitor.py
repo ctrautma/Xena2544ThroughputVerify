@@ -17,11 +17,6 @@
 #   Flavio Leitner, Red Hat Inc.
 #   Greg Dumas, Red Hat Inc.
 
-"""
-pass
-
-"""
-
 import argparse
 import locale
 import logging
